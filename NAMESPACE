@@ -1,0 +1,38 @@
+export(gamlssInf0to1, 
+       Inf0to1.d, Inf0to1.p, Inf0to1.q, Inf0to1.r,
+       gen.Inf0to1, plotInf0to1,
+       centiles.Inf0to1, centiles.Zadj,
+       gamlssZadj, 
+       Zadj.d, Zadj.p,Zadj.q, Zadj.r,
+       gen.Zadj, plotZadj, term.plotInf0to1, term.plotZadj)
+
+#       fmu, fsigma, fnu, ftau)
+#importFrom(survival, Surv, is.Surv)
+import(gamlss)
+importFrom("stats", "coef", "cov2cor", "deviance", "fitted", "formula",
+             "na.omit", "napredict", "pnorm", "predict", "printCoefmat",
+             "qnorm", "runif", "terms", "vcov")
+importFrom("methods", "is")
+importFrom("graphics", "lines", "plot", "points", "title")
+importFrom("grDevices", "gray", "pdf")
+importFrom(gamlss.dist, as.gamlss.family, gamlss.family, BE, BI, MN3, GA)
+#
+S3method(fitted, gamlssinf0to1)
+#S3method(residuals, gamlssinf0to1)
+S3method(coef, gamlssinf0to1)
+S3method(print, gamlssinf0to1)
+S3method(deviance, gamlssinf0to1)
+S3method(vcov,gamlssinf0to1)
+S3method(predict, gamlssinf0to1)
+S3method(summary, gamlssinf0to1)    
+S3method(formula, gamlssinf0to1)
+
+S3method(fitted, gamlssZadj)
+#S3method(residuals, gamlssinf0to1)
+S3method(coef, gamlssZadj)
+S3method(print, gamlssZadj)
+S3method(deviance, gamlssZadj)
+S3method(vcov,gamlssZadj)
+S3method(predict, gamlssZadj)
+S3method(summary, gamlssZadj)    
+S3method(formula, gamlssZadj)

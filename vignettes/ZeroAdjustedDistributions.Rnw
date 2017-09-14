@@ -1,0 +1,891 @@
+\documentclass[12]{article}
+%\VignetteEngine{knitr::knitr} 
+%\VignetteIndexEntry{Zero adjusted distributions on the positive real line}
+\usepackage{epsf}
+\usepackage{Rd}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{graphicx} 
+\usepackage{hyperref}
+\usepackage{latexsym}
+\usepackage{subfig}
+\usepackage{makeidx}
+\usepackage{multicol}
+\usepackage{enumerate} 
+\usepackage{tikz}
+\usepackage{lipsum}
+\usepackage[framemethod=tikz]{mdframed}
+\usepackage{natbib}
+\usepackage{color}
+\usepackage{rotating} 
+\usepackage{appendix} 
+\usepackage{ulem}
+\usepackage{url}
+\usepackage{inconsolata}
+\usepackage{array}
+\usepackage{marginnote}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{parskip}
+\usetikzlibrary{shapes,arrows}
+\usepackage[stable]{footmisc}
+\usepackage{dsfont}
+\usepackage{longtable}
+\usepackage{xspace}
+\usepackage{multirow}
+ 
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{natbib}
+\usepackage[latin1]{inputenc}
+\usepackage{ctable}
+
+
+\renewcommand{\Re}{\mathds{R}}
+\renewcommand{\R}{\textnormal{\sffamily\bfseries R}\xspace}
+
+\newcommand{\rsection}[1]{\marginnote{{\small\R code  in \\ section \ref{#1}}}[-1in]}
+\newcommand{\rpage}[1]{\marginnote{{\small\R code  on \\ page \pageref{#1}}}[-1in]}
+\newcommand{\rfigure}[2][0.35]{\marginnote{{\small Figure \ref{#2}}}[#1 in]}
+\newcommand{\NOTE}[1]{\marginnote{\textcolor{red}{#1}}}
+
+\newcommand{\E}{\text{E}}
+\newcommand{\V}{\text{Var}}
+\newcommand{\SD}{\text{SD}}
+
+\renewcommand{\theenumi}{\arabic{enumi}}
+\renewcommand{\theenumii}{\alph{enumii}}
+\renewcommand{\theenumiii}{\roman{enumiii}}
+\renewcommand{\labelenumii}{(\theenumii)}
+
+\definecolor{darkmagenta}{rgb}{.5,0,.5}
+
+\parindent=0in
+
+
+\newcommand{\pone}{\mu}
+\newcommand{\ptwo}{\sigma}
+\newcommand{\pthree}{\nu}
+\newcommand{\pfour}{\tau}
+\newcommand{\oth}{\text{otherwise}}
+\newcommand{\given}{\,|\,}
+\newcommand{\Rzeroone}{$(0,1)$}
+\newcommand{\binary}{$\{0,1\}$}
+\newcommand{\integers}{$\{0,1,2,\ldots\}$}
+\newcommand{\binomintegers}{$\{0,1,\ldots,n\}$}
+\newcommand{\greaterthantwo}{$(2,\infty)$}
+\newcommand{\comma}{,}  
+\newcommand{\grb}[1]{\mbox{\boldmath $#1$}}
+
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\logit}{logit}
+\DeclareMathOperator{\Prob}{Prob}
+
+\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
+
+\hyphenation{Like-lihood} \hyphenation{Jour-nal}
+\hyphenation{Sta-sinopoulos Stasi-nopoulos Stasino-poulos Stasinopou-los}
+\hyphenation{distri-bution}
+
+\makeindex
+
+\begin{document}
+
+\setlength{\marginparwidth}{2.5cm}
+
+\pagenumbering{arabic}
+\title{Zero adjusted  distributions on the positive real line}
+            
+\pagenumbering{arabic}
+\author{\bf{Mikis Stasinopoulos}, \bf{Marco Enea} and  \bf{ Robert A. Rigby} }
+
+\maketitle
+
+\tableofcontents    
+
+
+\section{Introduction}
+
+
+The new \texttt{R} package \code{gamlss.inf} is designed to fit both inflated distributions on the interval  $[0,1]$, including 0 and 1, and also zero adjusted distributions defined on $[0,\infty)$ including 0.  
+This vignette focuses on the zero adjusted distributions defined on $[0, \infty)$ including 0 (i.e. the non-negative real line). This is a mixed discrete-continuous distribution, comprising a value  $Y=0$ with probability $p_0$ and $Y=Y_1$ with probability  $(1-p_0)$ where $Y_1$ has a continuous distribution on the interval $(0, \infty)$, i.e. the positive real line.
+
+The \pkg{gamlss} package, 
+\cite{RigbyStasinopoulos05, StasinopoulosRigby07, Stasinopoulosetal2017}, 
+already provides two zero adjusted distributions, the zero adjusted gamma, \code{ZAGA} and the zero adjusted inverse Gaussian, \code{ZAIG}. The probability at the value  $Y=0$  may depend on explanatory variables.   Note the  gamma distribution has 2 parameters, so the zero  adjusted  gamma with probability at 0  has a total of 3 parameters.  In practice, and for complicated data sets, the part  of  the response which lies on positive real line  may need more than 2 distribution parameters to be captured correctly. 
+
+There are three methods within gamlss packages to obtain a more flexible continuous distribution with up to 4 parameters with range $(0, \infty)$, i.e. the positive real line, not including zero:
+
+\begin{enumerate}
+  \item use a flexible continuous distribution with range  $(0, \infty)$ within the \pkg{gamlss.dist} package, e.g. $\texttt{BCCG}(\mu,\sigma, \nu)$, $\texttt{BCT}(\mu,\sigma, \nu, \tau)$ or $\texttt{BCPE}(\mu,\sigma, \nu, \tau)$, see Section \ref{Explicit continuous distributions on (0,infty)}
+  \item Generate (i.e. create) a flexible continuous distribution on  $(0, \infty)$ by transforming any  continuous distribution with range  $(-\infty, \infty)$ available in the \pkg{gamlss.dist} package to range  $(0, \infty)$ using the inverse $\log$ (i.e. exponential) transformation through the function \\
+  \code{gen.Family()} with argument \code{type="log"}, see Section \ref{Log transform distributions on the real line}
+  \item Generate (i.e. create)  a flexible continuous distribution with range  $(0, \infty)$ by truncating any continuous distribution on  $(-\infty, \infty)$ available in \pkg{gamlss.dist} package to range  $(0, \infty)$ using  the function \code{gen.trun()} of the package \pkg{gamlss.tr}, see Section \ref{Truncated distributions on the positive real line}
+\end{enumerate}
+
+The new \R{} package \pkg{gamlss.inf} allows any continuous distribution on $(0,\infty)$, obtained by any of the above three methods, to be zero adjusted to range  $[0,\infty)$, by including a point probability at zero.
+
+So the package \pkg{gamlss.inf}  enhances the capability of the standard \code{gamlss()} function  by allowing an extra parameter for modelling the probability at zero.
+The overall distribution can then have up to five parameters.
+Let $\grb{\mu},\grb{\sigma}, \grb{\nu}, \grb{\tau}$ represent the four parameters of the distribution defined on $(0,\infty)$ and parameter ${\grb \xi}_0=p_0$, the probability at 0. Then the general zero adjusted model that the new package \code{gamlss.inf} can fit can be written as:
+
+
+\begin{align}
+Y & \stackrel{\hbox{\tiny{ind}}}{\sim}   \mathcal{D}( \grb{\mu},\grb{\sigma}, \grb{\nu}, \grb{\tau},\grb{\xi}_0 ) \nonumber\\
+ {\grb \eta}_1&=g_1\left( \grb{\mu} \right)= {\bf X}_{1}\grb{\beta}_{1} + s_{11}({\bf x}_{11})+\ldots+ s_{1J_1}({\bf x}_{1 J_1}) \nonumber\\
+ {\grb \eta}_2&=g_2\left( \grb{\sigma} \right)={\bf X}_{2}\grb{\beta}_{2} + s_{21}({\bf x}_{2 1})+\ldots+ s_{2J_2}({\bf x}_{2 J_2}) \label{GAMLSS_Model_1} \\
+{\grb \eta}_3&=g_3\left( \grb{\nu} \right)={\bf X}_{3}\grb{\beta}_{3} + s_{31}({\bf x}_{3 1})+\ldots+ s_{3J_3}({\bf x}_{3 J_3})  \nonumber\\
+{\grb \eta}_4&=g_4\left( \grb{\tau} \right)={\bf X}_{4}\grb{\beta}_{4} + s_{41}({\bf x}_{4 1})+\ldots+ s_{4J_4}({\bf x}_{4 J_4}) \nonumber \\
+{\grb \eta}_5&=g_5\left( \grb{\xi}_0 \right)={\bf X}_{5}\grb{\beta}_{5} + s_{51}({\bf x}_{5 1})+\ldots+ s_{5J_5}({\bf x}_{5 J_5}) \nonumber 
+\end{align}
+
+\noindent
+ where $\mathcal{D}( \grb{\mu},\grb{\sigma}, \grb{\nu}, \grb{\tau}, {\grb \xi}_0)$ is a zero adjusted   distribution for the response variable $Y$ defined on  $[0, \infty)$ including 0,  where 
+ ${\bf X}_{k}$  are the design matrices incorporating the linear additive terms in the model, ${\grb \beta}_k$   are the linear coefficient parameters and $s_{kj}({\bf x}_{kj})$ represent  smoothing  functions  for  explanatory variables  ${\bf x}_{kj}$, for $k=1,2,3,4,5$ and $j=1,\ldots,J_k$. Note that the quantitative explanatory  variables in the ${\bf X}$'s can be the same or different for the ones defined in the smoothers. The vectors ${\grb \eta}_1$, ${\grb \eta}_2$, ${\grb \eta}_3$, ${\grb \eta}_4$ and ${\grb \eta}_5$ are called the \textit{predictors} of the distribution parameters ${\grb \mu}$, ${\grb \sigma}$, ${\grb \nu}$, ${\grb \tau}$ and  ${\grb \xi}_0$ respectively. Note that $\xi_0=p_0=P(Y=0)$.
+
+
+ \section{Distributions on the positive real line}
+ \label{Distributions on the positive real line}
+
+\subsection{Explicit continuous distributions on $(0,\infty)$}
+\label{Explicit continuous distributions on (0,infty)}
+
+ Within the \code{gamlss.dist} package there are currently several continuous distributions defined on $(0,\infty)$, including:
+ \begin{enumerate}
+   \item  the exponential distribution, $\texttt{EXP}(\mu)$, with one parameter,
+   \item  the gamma distribution, $\texttt{GA}(\mu,\sigma)$, with two parameters,
+    \item  the inverse gamma distribution, $\texttt{IGAMMA}(\mu,\sigma)$, with two parameters,
+   \item  the inverse Gaussian distribution, $\texttt{IG}(\mu,\sigma)$, with two parameters,
+   \item  the log normal distribution, $\texttt{LOGNO}(\mu,\sigma)$, with two parameters 
+   \item  the Pareto type 2 distribution, $\texttt{PARETO2}(\mu,\sigma)$, with two parameters 
+     \item  the  Weibull distribution, $\texttt{WEI}(\mu,\sigma)$, $\texttt{WEI2}(\mu,\sigma)$, $\texttt{WEI3}(\mu,\sigma)$, with two parameters 
+   \item  the Box-Cox Cole and Green distribution, $\texttt{BCCG}(\mu,\sigma, \nu)$ or $\texttt{BCCGo}(\mu,\sigma, \nu)$, with three parameters.
+   \item  the generalized gamma distribution, $\texttt{GG}(\mu,\sigma, \nu)$, with three parameters.
+    \item  the generalized inverse Gaussian distribution, $\texttt{GIG}(\mu,\sigma, \nu)$, with three parameters.
+   \item  the Box-Cox {\it t} distribution, $\texttt{BCT}(\mu,\sigma, \nu, \tau)$ or $\texttt{BCTo}(\mu,\sigma, \nu, \tau)$, with four parameters.
+   \item  the Box-Cox power exponential distribution, $\texttt{BCPE}(\mu,\sigma, \nu, \tau)$ or  $\texttt{BCPEo}(\mu,\sigma, \nu, \tau)$ ,with four parameters.
+    \item  the generalized beta type 2 distribution, $\texttt{GB2}(\mu,\sigma, \nu, \tau)$, with four parameters
+   
+\end{enumerate}
+
+ \subsection{Log transform distributions on $(0, \infty)$.}
+ \label{Log transform distributions on the real line}
+
+Any continuous random variable say $Z$ defined on  $(-\infty,\infty)$  can be transformed by the inverse log (i.e. exponential) transformation  $Y=\exp(Z)$  to a random variable Y defined on  $(0, \infty)$. The resulting distribution is called a log-transform distribution. For example, if $Z$ is a {\it t}-family distributed variable i.e.  $Z \sim \texttt{TF}(\mu,\sigma,\nu)$, and the inverse log transformation is applied, then  $Y \sim \texttt{logTF}(\mu,\sigma,\nu)$, i.e. a log-{\it t} family distribution on  $(0, \infty)$. 
+ 
+The following is an example on how to take a \code{gamlss.family} distribution on 
+$(-\infty, \infty)$ and create a corresponding log-transform  distribution defined on  $(0, \infty)$. The gamlss function \code{gen.Family()} of the \pkg{gamlss.dist} package generates the  \code{d} (pdf),  \code{p} (cdf), \code{q} (inverse cdf) and \code{r} (random generation)   functions of the  log-transform distribution, together with the function which can be used for fitting within \pkg{gamlss}. 
+Here first generate a log-{\it t} family distribution, i.e. $\texttt{logTF}(\mu,\sigma, \nu)$, and plot the distribution for different values of $\mu$, $\sigma$ and $\nu$. Note that $\mu$, $\sigma$ and $\nu$ are defined on the original \textit{t}-distribution ranges, i.e. $(-\infty, \infty)$ for $\mu$ and $(0, \infty)$ for $\sigma$ and $\nu$. This implies that $\exp(\mu)$ is not the mean of the log-transform, $\texttt{logTF}(\mu,\sigma, \nu)$,  distribution but its median. Also  $\sigma$ and $\nu$ are related to the scale and shape of the distribution.  We use \code{gen.Family("TF", type="log")} to generate a log-{\it t} family distribution and in Figure \ref{fig:logTFDist} we plot the distribution for different values of $\mu$, $\sigma$ and $\nu$ using the function \code{curve()}.
+
+\rfigure{fig:logTFDist}
+\label{r:logTFDist}
+<<logTFDist, echo=TRUE, fig.show='hide',fig.path="",  fig.asp=1, message=FALSE>>=
+# generate the distribution
+library(gamlss)
+gen.Family("TF", type="log")
+# different mu
+curve(dlogTF(x, mu=-5, sigma=1, nu=10), 0,10, n = 1001, ylim=c(0,1),
+      lwd=2, lty=2, col=2)
+title("(a)")
+curve(dlogTF(x, mu=-1, sigma=1, nu=10), 0,10, add=TRUE, lwd=2, lty=3, col=3)
+curve(dlogTF(x, mu=0,  sigma=1, nu=10), 0,10, add=TRUE, lwd=2, lty=4, col=4)
+curve(dlogTF(x, mu=1,  sigma=1, nu=10), 0,10, add=TRUE, lwd=2, lty=5, col=5)
+curve(dlogTF(x, mu=2,  sigma=1, nu=10), 0,10, add=TRUE, lwd=2, lty=6, col=6)
+legend("topright",
+       legend=c("mu = -5","mu = -1","mu = 0","mu = 1","mu = 2"),
+       lty=2:6, col=2:6, cex=1)
+# different sigma
+curve(dlogTF(x, mu=0, sigma=.5, nu=10), 0,2, ylim=c(0,3),
+      lwd=2, lty=2, col=2)
+title(("(b)"))
+curve(dlogTF(x, mu=0, sigma=1, nu=10),  0,2, add=TRUE, lwd=2, lty=3, col=3)
+curve(dlogTF(x, mu=0, sigma=2, nu=10),  0,2, add=TRUE, lwd=2, lty=4, col=4)
+curve(dlogTF(x, mu=0, sigma=5, nu=10 ), 0,2, add=TRUE, lwd=2, lty=5, col=5)
+legend("topright",
+       legend=c("sigma = .5","sigma = 1","sigma = 2","sigma = 5"),
+       lty=2:5, col=2:5, cex=1)
+# different nu
+curve(dlogTF(x, mu=0, sigma=.5, nu=1000), 0,3, ylim=c(0,1.1),
+       lwd=2, lty=2, col=2)
+title("(c)")
+curve(dlogTF(x, mu=0, sigma=.5, nu=10), 0,3, add=TRUE, lwd=2, lty=3, col=3)
+curve(dlogTF(x, mu=0, sigma=.5, nu=2 ), 0,3, add=TRUE, lwd=2, lty=4, col=4)
+curve(dlogTF(x, mu=0, sigma=.5, nu=1 ), 0,3, add=TRUE, lwd=2, lty=5, col=5)
+legend("topright",
+       legend=c("nu = 1000","nu = 10","nu = 2","nu = 1"),
+       lty=2:5, col=2:5, cex=1)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{logTFDist-1}
+\includegraphics[width=0.49\textwidth]{logTFDist-2}\\
+\includegraphics[width=0.49\textwidth]{logTFDist-3}
+\rpage{r:logTFDist}
+\caption{A log-\textit{t} distribution: (a) with values $\mu= \left(-5,-1,0,1,2\right)$, $\sigma=1$ and $\nu=10$, (b) with values $\mu=0$, $\sigma=\left(0.5, 1,2,5\right)$ and  $\nu=10$ and (c) with values $\mu=0$, $\sigma=0.5$ and $\nu=\left(1000,10,2,1\right)$.}
+\label{fig:logTFDist}
+\end{figure}
+
+
+Figure \ref{fig:logTFDist} shows the different shapes the $\texttt{logTF}(\mu,\sigma,\nu)$ distribution can take.  Panel (a) shows, for fixed $\sigma=1$ and $\nu=10$ how the distribution changes for different values of $\mu= \left(-5,-1,0,1,2\right)$. Panel (b) fixes  $\mu=0$ and  $\nu=10$ and varies $\sigma=\left( 0.5, 1, 2, 5 \right)$. Finally panel  (c) fixes   $\mu=0$ and  $\sigma=0.5$ and varies $\nu=\left( 1000,10,2,1\right)$.
+
+
+\subsection{Truncated distributions on $(0, \infty)$.}
+\label{Truncated distributions on the positive real line}
+
+Any distribution defined on the real line $(-\infty, \infty)$ can be left truncated at 0  to give a truncated distribution on  $(0, \infty)$ using the function \code{gen.trun()} from the \code{R} package \pkg{gamlss.tr}.
+
+Below we transform a skew student {\it t}, $\texttt{SST}(\mu, \sigma, \nu, \tau)$, distribution by left truncating it at zero to give a truncated $\texttt{SST}$ distribution,   $\texttt{SSTtr}(\mu, \sigma, \nu, \tau)$ defined on $(0, \infty)$. The range of each parameter of $\texttt{SSTtr}(\mu, \sigma, \nu, \tau)$ is the same as for $\texttt{SST}(\mu, \sigma, \nu, \tau)$, i.e. $-\infty< \mu < \infty$, $\sigma>0$, $\nu>0$ and $\tau>2$. 
+
+
+\rfigure{fig:trunSST}
+\label{r:trunSST}
+<<trunSST, echo=TRUE, fig.show='hide',fig.path="",  fig.asp=1, message=FALSE>>=
+# generate the distribution 
+library(gamlss.tr)
+gen.trun(0,"SST",type="left")
+# different mu
+curve(dSSTtr(x, mu=.1, sigma=.5, nu=1, tau=10), 0,4, lwd=2, lty=2, col=2)
+curve(dSSTtr(x, mu= 1, sigma=.5, nu=1, tau=10), 0,4, lwd=2, lty=3, col=3, 
+      add=TRUE)
+curve(dSSTtr(x, mu= 2, sigma=.5, nu=1, tau=10), 0,4, lwd=2, lty=4, col=4,
+       add=TRUE)
+title("(a)")
+legend("topright",
+       legend=c("mu = .1","mu = 1","mu = 2"),
+       lty=2:4, col=2:4, cex=1)
+# different sigma
+curve(dSSTtr(x, mu=2, sigma=0.5, nu=1, tau=10), 0,4, lwd=2, lty=2, col=2 )
+curve(dSSTtr(x, mu=2, sigma=  1, nu=1, tau=10), 0,4, lwd=2, lty=3, col=3,
+      add=TRUE)
+curve(dSSTtr(x, mu=2, sigma=  2, nu=1, tau=10), 0,4, lwd=2, lty=4, col=4,
+      add=TRUE)
+title("(b)")
+legend("topright",
+       legend=c("sigma = .5","sigma = 1","sigma = 2"),
+       lty=2:4, col=2:4, cex=1)
+# different nu
+curve(dSSTtr(x, mu=2, sigma=.5, nu=0.1, tau=10), 0,4, lwd=2, lty=2, col=2)
+curve(dSSTtr(x, mu=2, sigma=.5, nu=  1, tau=10), 0,4, lwd=2, lty=3, col=3, 
+      add=TRUE)
+curve(dSSTtr(x, mu=2, sigma=.5, nu=  2, tau=10), 0,4, lwd=2, lty=4, col=4,
+      add=TRUE)
+title("(c)")
+legend("topright",
+       legend=c("nu = 0.1","nu = 1","nu = 2"),
+       lty=2:4, col=2:4, cex=1)
+# different tau 
+curve(dSSTtr(x, mu=2, sigma=.5, nu=1, tau=  3),  0,4, lwd=2, lty=2, col=2)
+curve(dSSTtr(x, mu=2, sigma=.5, nu=1, tau=  5),  0,4, lwd=2, lty=3, col=3,
+      add=TRUE)
+curve(dSSTtr(x, mu=2, sigma=.5, nu=1, tau=100),  0,4, lwd=2, lty=4, col=4,
+       add=TRUE)
+title("(d)")
+legend("topright",
+       legend=c("tau = 3","tau = 5","tau = 100"),
+       lty=2:4, col=2:4, cex=1)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{trunSST-1}
+\includegraphics[width=0.49\textwidth]{trunSST-2}\\
+\includegraphics[width=0.49\textwidth]{trunSST-3}
+\includegraphics[width=0.49\textwidth]{trunSST-4}
+\rpage{r:trunSST}
+\caption{A truncated from zero SST  distribution: 
+(a) with values $\mu= \left(0.1,1,2\right)$, $\sigma=0.5$, $\nu=1$ and $\tau=10$, 
+(b) with values $\mu=2$, $\sigma=\left(0.5,1,2\right)$,  $\nu=1$ and $\tau=10$  
+(c) with values $\mu=2$, $\sigma=0.5$, $\nu=\left(0.1,1,2 \right)$ and $\tau=10$. 
+(d) with values $\mu=2$, $\sigma=0.5$, $\nu=1$ and $\tau=\left(3,5,100 \right)$}
+\label{fig:trunSST}
+\end{figure}
+
+Figure \ref{fig:trunSST}  shows the different shapes of the $SSTtr(\mu, \sigma, \nu, \tau)$ distribution can take. Panel (a) shows, for fixed 
+$\sigma=0.5$ $\nu=1$ and $\tau=10$, how the distribution changes for different values of $\mu= \left(0.1,1,2\right)$. 
+Panel (b) fixes  
+$\mu=2$,  $\nu=1$ and $\tau=10$ and varies $\sigma=\left(0.5,1,2\right)$.  
+Panel (c) fixes  
+$\mu=2$, $\sigma=0.5$ and $\tau=10$ and varies $\nu=\left(0.1,1,2\right)$.    Panel (d) fixes  $\mu=2$, $\sigma=0.5$ and  $\nu=1$ and varies $\tau=\left(3,5, 100 \right)$.
+
+
+\section{Generating zero adjusted  distributions }
+\label{Generating zero adjusted  distributions}
+
+
+
+Next it is shown how any \code{gamlss.family} distribution defined on $(0,\infty)$ can be zero adjusted  to  $[0,\infty)$, by including a point probability at 0.
+
+The function \code{gen.Zadj()} takes as an argument a \code{gamlss.family} distribution on  $(0,\infty)$, obtained by any of the three methods of Section \ref{Distributions on the positive real line}, and generates a zero adjusted version of the distribution having a  point probability at  $0$. The function has only one  argument, \code{family}, which specifies a distribution family on  $(0,\infty)$. 
+
+The resulting mixed (continuous-discrete) probability (density) function (pdf) is given by:
+\begin{eqnarray}
+f_Y(y|{\grb \theta}, \xi_0)=\left\{ \begin{array}{ll}
+                                  \xi_0  & \mbox{if $y=0$} \\
+(1-\xi_0) f_W(y|{\grb \theta}) & \mbox{if $0<y< \infty$}  \\
+\end{array}
+\label{pdfDINF7} \right.
+\end{eqnarray}
+for $0 \leq y \leq \infty$, where $f_W(y|{\grb \theta})$ is any probability density function defined on $(0,\infty)$, i.e. for $0 < y < \infty$, with parameters ${\grb \theta}^\top=(\theta_1,\theta_2,\ldots,\theta_p)$ and $0<\xi_0<1$, where  $\xi_0= P(Y=0)$. 
+Note that, in the \pkg{gamlss.inf} implementation, ${\grb \theta}$ has a maximum of four parameters denoted by ${\grb \theta}^{T} = \left(\mu, \sigma, \nu, \tau \right)$.
+
+In the example below first take the  skew student {\it t}-family distribution, $\texttt{SST}(\mu, \sigma, \nu, \tau)$, defined on $(-\infty,\infty)$, and use the \code{gen.Family()} function in the \pkg{gamlss.dist} package to generate the  distribution  $\texttt{logSST}( \mu, \sigma, \nu, \tau)$,  defined on $(0,\infty)$.  By using the function \code{gen.Zadj()} on the new generated $\texttt{logSST}(\mu, \sigma, \nu, \tau)$ distribution, a zero adjusted $\texttt{logSST}$ distribution, $\texttt{logSSTZadj}( \mu, \sigma, \nu, \tau)$ is created,  defined on $[0,\infty)$.
+<<>>=
+library(gamlss.inf)
+gen.Family(family="SST", type="log")
+gen.Zadj(family="logSST")
+@
+There are five function generated here:
+\begin{description}
+  \item[\code{dlogSSTZadj()}] The pdf of the distribution, \code{d} function.
+  \item[\code{plogSSTZadj()}] The cdf of the distribution, \code{p} function.
+  \item[\code{qlogSSTZadj()}] The inverse cdf of the distribution, \code{q} function.
+  \item[\code{rlogSSTZadj()}] The random generating function of the distribution, \code{r} function.
+  \item[\code{plotlogSSTZadj()}] The function for plotting the pdf of the distribution.
+\end{description}
+
+To fit the distribution the function {\bf \code{gamlssZadj()}} can be used, see Section \ref{Fitting a zero adjusted distribution}.
+
+\section{Plotting zero adjusted distributions}
+\label{Plotting inflated zero adjusted distributions}
+
+The newly created \code{plotlogSSTZadj()} function can be used to  plot the pdf of the adjusted distribution (which is a mixed continuous-discrete distribution). Figure \ref{fig:logSSTZadj} shows the use of the \code{plotlogSSTZadj()} function. The function plots the zero adjusted probability (density) function including the point probability at zero.  
+Figure \ref{fig:logSSTZadj} shows eight different realisations of the distribution for different values of the parameters.
+
+\rfigure{fig:logSSTZadj}
+\label{r:logSSTZadj}
+<<logSSTZadj, echo=TRUE, fig.show='hide',fig.path="",  fig.asp=1, message=FALSE>>=
+plotlogSSTZadj(mu= 1, sigma=1, nu=1, tau=10, xi0=.1); title("(a)")
+plotlogSSTZadj(mu=-1, sigma=1, nu=1, tau=10, xi0=.1); title("(b)")
+plotlogSSTZadj(mu=-1, sigma=2, nu=1, tau=10, xi0=.1); title("(c)")
+plotlogSSTZadj(mu=0,  sigma=2, nu=1, tau=10, xi0=.1); title("(d)")
+plotlogSSTZadj(mu=0,  sigma=1, nu=10,tau=10, xi0=.1); title("(e)")
+plotlogSSTZadj(mu=0,  sigma=1, nu=1, tau=3,  xi0=.1); title("(f)")
+plotlogSSTZadj(mu=0,  sigma=1, nu=2, tau=3,  xi0=.5); title("(g)")
+plotlogSSTZadj(mu=0,  sigma=1, nu=.3,tau=100,xi0=.1); title("(h)")
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-1}
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-2}\\
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-3}
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-4}\\
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-5}
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-6}\\
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-7}
+\includegraphics[height=5cm, width=0.49\textwidth]{logSSTZadj-8}
+\rpage{r:logSSTZadj}
+\caption{A $\texttt{logSST}$ distribution:
+(a) with values $\mu= 1$, $\sigma=1$, $\nu=1$,   $\tau=10$  and  $\xi_0=.1$
+(b) with values $\mu=-1$, $\sigma=1$, $\nu=1$,   $\tau=10$  and  $\xi_0=.1$
+(c) with values $\mu=-1$, $\sigma=2$, $\nu=1$,   $\tau=10$  and  $\xi_0=.1$
+(d) with values $\mu=0$,  $\sigma=2$, $\nu=1$,   $\tau=10$  and  $\xi_0=.1$
+(e) with values $\mu=0$,  $\sigma=1$, $\nu=10$,  $\tau=10$  and  $\xi_0=.1$
+(f) with values $\mu=0$,  $\sigma=1$, $\nu=1$,   $\tau=3$   and  $\xi_0=.1$
+(g) with values $\mu=0$,  $\sigma=1$, $\nu=2$,   $\tau=3$   and  $\xi_0=.5$
+(h) with values $\mu=0$,  $\sigma=1$, $\nu=.3$,  $\tau=100$ and  $\xi_0=.1$.}
+
+\label{fig:logSSTZadj}
+\end{figure}
+
+The standard plotting functions of \code{R} can also be used to plot the created mixed distribution as is shown below.
+Figure \ref{fig:ALLlogSSTZadj} shows how the pdf, cdf, inverse cdf and randomisation functions can be displayed for different values of the distribution parameters.
+ 
+\rfigure{fig:ALLlogSSTZadj}
+\label{r:ALLlogSSTZadj}
+<<ALLlogSSTZadj, echo=TRUE, fig.show='hide',fig.path="",  fig.asp=1, message=FALSE>>=
+# plotting the pdf -------------------------------
+curve(dlogSSTZadj(x, mu=1, sigma=1, nu=.8, tau=10, xi0=.1),
+      0.001,10, ylab="pdf",  main="(a)")
+# getting the probabilities
+p0 <- dlogSSTZadj(x=0, mu=1, sigma=1, nu=.8, tau=10, xi0=.1)
+points(0, p0, col="blue")
+lines(0, p0, col="blue", type="h")
+# plotting the cdf -------------------------------
+curve(plogSSTZadj(x, mu=1, sigma=1, nu=.8, tau=10, xi0=.1),
+      0.0001,10, ylim=c(0,1), ylab="cdf", main="(b)")
+points(c(0), c(p0), col="blue")
+lines(c(0), c(p0), col="blue", type="h")
+# plotting the inverse cdf -----------------------
+curve(qlogSSTZadj(x, mu=1, sigma=1, nu=.8, tau=10, xi0=.1),
+      0.0001,0.99, ylim=c(0,10), ylab="inverse cdf", main="(c)")
+# plottind simulated data
+set.seed(1000)
+truehist(rlogSSTZadj(1000,mu=1, sigma=1, nu=.8, tau=10, xi0=.1),
+         main="(d)")
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{ALLlogSSTZadj-1}
+\includegraphics[width=0.49\textwidth]{ALLlogSSTZadj-2}\\
+\includegraphics[width=0.49\textwidth]{ALLlogSSTZadj-3}
+\includegraphics[width=0.49\textwidth]{ALLlogSSTZadj-4}\\
+\rpage{r:ALLlogSSTZadj}
+\caption{The (a) pdf (b) cdf (c) inverse pdf and (d) simulated data from a zero adjusted log-\texttt{SST} distribution with $\mu=1$, $\sigma=1$, $\nu=.8$,  $\tau=10$, $\xi_0=.1$.}
+\label{fig:ALLlogSSTZadj}
+\end{figure}
+
+The next section demonstrates how to use the function \code{gamlssZadj()} to fit a model which has a response variable on the interval $[0,\infty)$, i.e. including 0.
+
+\section{Fitting a zero adjusted distribution}
+\label{Fitting a zero adjusted distribution}
+
+\subsection{The \texttt{gamlssZadj()} function}
+\label{The gamlssZadj() function}
+
+The main function for fitting a zero adjusted distribution model to a response variable $Y$ on $[0,\infty)$ i.e. including 0, is \code{gamlssZadj()}. In a zero adjusted distribution the parameters $\mu$, $\sigma$, $\nu$ and $\tau$ (of the unadjusted distribution) are  orthogonal to the parameter $\xi_0=P(Y=0)$  in the sense that the log-likelihood function can be factorised in two components, one containing the $\mu$, $\sigma$, $\nu$ and $\tau$ and another containing $\xi_0$. This means that the two sets of parameters can be estimated separately.
+The  function \code{gamlssZadj()} takes advantage of this separation and works as follows:
+\begin{itemize}
+  \item It picks the argument \code{family}  which defines a \code{gamlss.family} distribution defined on $(0,\infty)$
+  \item It creates a binary response variable $Y_1=1 (\textrm{if} \ Y=0) + 0 (\textrm{if} \ Y>0)$ and it fits  a binary logistic model (using the \code{gamlss.family} \code{BI})
+ \item Fits a GAMLSS model to  the data cases with Y in interval  $(0,\infty)$ using the distribution defined by \code{family}, by weighting out the observations with $Y=0$.
+ \item Creates the (normalised randomized) quantile residuals for the all cases (including cases with $Y=0$) using the fitted zero adjusted distribution model.
+ \item Saves the output as  an \code{gamlssZadj} object which is a subclass of a \code{gamlss} object.
+\end{itemize}
+
+The idea is that the object  \code{gamlssZadj} should behave similar to a \code{gamlss} object. For this purpose the following S3 methods are created.
+\begin{enumerate}
+  \item \code{fitted.gamlssZadj()},
+  \item \code{coef.gamlssZadj()},
+  \item \code{print.gamlssZadj()},
+  \item \code{deviance.gamlssZadj()},
+  \item \code{vcov.gamlssZadj()},
+  \item \code{summary.gamlssZadj()},
+  \item \code{predict.gamlssZadj()},
+  \item \code{formula.gamlssZadj()}.
+\end{enumerate}
+The methods are demonstrated in the next sections.
+ 
+The function \code{gamlssZadj()}  has the following arguments:
+\begin{description}
+  \item[y] the response variable on $[0, \infty)$ (including values at zero)
+  \item[mu.formula] a model formula for the $\mu$ parameter
+  \item[sigma.formula] a model formula for the $\sigma$ parameter
+  \item[nu.formula] a model formula for the $\nu$ parameter
+  \item[tau.formula] a model formula for the $\tau$ parameter
+  \item[xi0.formula] a model formula for the $\xi_0$ parameter which is equals to the probability at zero
+  \item[data] a data frame containing the variables occurring in the formula.
+  \item[family] any \code{gamlss()} distribution family defined on $(0,\infty)$
+  \item[weights] a vector of prior weights as in \code{gamlss()}
+  \item[trace] logical, if TRUE information on model estimation will be printed during the fitting
+  \item[...] for extra arguments which can be passed to \code{gamlss()}.
+\end{description}
+
+Since the individual models fitted within the algorithm used in \code{gamlssZadj()} are GAMLSS models, the parameter formulae above can take any linear or additive GAMLSS terms including smoothers and random effects.
+
+To  demonstrate the use of the \code{gamlssZadj()} function a simulated  example is used below. 
+\subsection{Simulating data}
+\label{Simulating data}
+
+To compare the results obtained by the function \code{gamlssZadj()} to the ones obtained from standard \code{gamlss()}, simulate data from the zero adjusted gamma distribution, $\texttt{ZAGA}(\mu,\sigma, \nu)$.
+ 
+\rfigure{fig:ZAGAplot}
+\label{r:ZAGAplot}
+<<ZAGAplot,fig.path="",  fig.asp=1, fig.show='hide',fig.path="",  fig.asp=1>>=
+library(gamlss)     # loading gamlss package
+library(gamlss.inf)
+# creating  data
+set.seed(3223)
+ y0 <- rZAGA(1000, mu=3, sigma=.5, nu=.15)
+truehist(y0) 
+@
+
+ The mixed continuous-discrete probability (density) function of $Y\sim \texttt{ZAGA}(\mu, \sigma, \nu)$ is given by
+\begin{eqnarray}
+f_Y(y)=\left\{ \begin{array}{ll}
+                                 p_0  & \mbox{if $y=0$} \\
+(1-p_0) f_W(y) & \mbox{if $0<y<\infty$}  \\
+ \end{array}
+\label{pdfBEINF7} \right.
+\end{eqnarray}
+ for $ 0 \leq y < \infty $, where $ W \sim \texttt{GA}(\mu,\sigma) $ has a gamma distribution with $ 0<\mu<\infty $ and $ 0<\sigma<\infty $ and $0<\nu<1$, where $\nu=p_0$.
+For $\texttt{ZAGA}(\mu, \sigma, \nu)$ the default link functions for $\mu$ and $\sigma$  are the log link function and for $\nu$ the logit link function, giving predictors $\eta_1= \log \mu$,  $\eta_2 = \log \sigma$ and $\eta_3=\log \left[ \nu / (1-\nu)\right]$.
+ 
+ 
+Here $f_W(y)$ is given by
+\begin{eqnarray}
+f_W(y|\mu,\sigma)= \frac{1}{(\sigma^2
+\mu)^{1/\sigma^2}}\hspace{1mm}\frac{y^{\frac{1}{\sigma^2}-1}\hspace{1mm}
+e^{-y/(\sigma^2 \mu)}}{\Gamma{(1/\sigma^2)}}
+ \label{pdfGA}
+\end{eqnarray}
+for $y > 0$, where $\mu>0$ and $\sigma>0$ and  $E(W)=\mu$ and
+$Var(W)=\sigma^2 \mu^2$.
+
+The simulated example comes from a zero adjusted gamma distribution,  $\texttt{ZAGA}(\mu, \sigma, \nu)$, with $\mu=3$ and $\sigma=0.5$ and $\nu=0.15$, so $p_0=0.15$. 
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.39\textwidth]{ZAGAplot-1}
+\rpage{r:ZAGAplot}
+\caption{Generated data using the zero adjusted gamma  distribution: 
+with values $\mu=3$, $\sigma=0.5$, and  $\nu=0.15$. 
+}
+\label{fig:ZAGAplot}
+\end{figure} 
+
+ \subsection{Fitting a zero adjusted distribution}
+\label{Fitting distributions} 
+  
+The zero adjusted  distribution is fitted using both  \code{gamlss()}  and \code{gamlssZadj()} functions. Note that the \code{family} argument in \code{gamlssZadj()} takes a \code{gamlss.family} distribution defined on $( 0, \infty)$. The \code{trace=TRUE} argument is used in \code{gamlssZadj()} to check the convergence of the two different models fitted, one using the $\texttt{BI}(\mu)$ family and the other using  the $\texttt{GA}(\mu, \sigma)$.
+<<>>=
+ g0 <- gamlss(y0~1, family=ZAGA)
+ t0 <- gamlssZadj(y=y0, mu.formula=~1, family=GA, trace=TRUE)
+AIC(g0,t0, k=0)
+@
+ 
+Note that the  global deviance of the fitted \code{t0} model, using \code{gamlssZadj()},  is obtained by adding the individual deviances from the binomial and the  gamma model. The third fitted  parameter in both models, is equal to the the probability at zero. The third parameter is called \code{nu} (i.e. $\nu$) in \code{gamlss} but \code{xi0} (i.e. $\xi_0$)  in \code{gamlssZadj()}, where $\nu=p_0$ and $\xi_0=p_0$. The default link functions are $\textrm{logit}(\nu)$ and $\textrm{logit}(\xi_0)$  giving the same predictor $\eta_3=\log \left[ p_0 / (1-p_0)\right]$. Hence  the intercept coefficients ($\beta_{30}$) for the  predictor $\eta_3$ for the third parameter are the same for both models as shown below.
+<<>>=
+coef(g0, "nu")
+coef(t0, "xi0")
+@
+The fitted values for $\nu$ and $\xi_0$, which are the estimated probabilities at zero, are also identical. 
+<<>>=
+fitted(t0, "xi0")[1]
+fitted(g0, "nu")[1]
+@
+
+The \code{summary()} function makes it clear that the two models are identical.
+<<>>=
+summary(t0)
+summary(g0)
+@
+The estimated variance covariance matrix of the estimates of the intercept coefficients ($\beta_{0k}$ for $k=1,2,3$) in the predictors of $(\mu, \sigma, \nu)$ and $(\mu, \sigma, \xi_0)$ for the  fitted \code{g0} and \code{t0} models, respectively,  can be obtained as follows:
+<<>>=
+vcov(t0)
+vcov(g0)
+@
+ Note that, because of the partition of the likelihood function, parameters $\mu$ and $\sigma$ are orthogonal to $\nu$ or $\xi_0$. 
+
+The residuals for the two models should be identical for the not zero response variable values, i.e. $Y>0$. Due to the randomization of the residuals at discrete values of $Y$ (i.e. $Y=0$ here) we expect differences in the randomized residuals when the response  $Y$ is zero. This is demonstrated in the lower part of Figure \ref{fig:RESIDZERO} where  the residuals are plotted against the  observation index. 
+\rfigure{fig:RESIDZERO}
+\label{r:RESIDZERO}
+<<RESIDZERO,fig.path="",  fig.asp=1, fig.show='hide'>>=
+plot(resid(t0), pch="+")
+points(resid(g0), col="red")
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.59\textwidth]{RESIDZERO-1}
+\rpage{r:RESIDZERO}
+\caption{Superimposed residuals from models \texttt{t0}, (+), and \text{g0}, (o). Because of the randomization in the residuals for the zero values of the response, the values of the residuals in the lower part of the plot are not identical.
+}
+\label{fig:RESIDZERO}
+\end{figure}
+Next we will plot the fitted distribution in Figure \ref{fig:FITTEDZERO}. The standard $\texttt{ZAGA}(\mu, \sigma)$ distribution in \pkg{gamlss.dist} has its own plotting function called \code{plotZAGA()} which can be used here.  For the model fitted with  \code{gamlssZadj()} such a function \code{plotGAZadj()}  is created using the \code{gen.Zadj()} function.
+
+\rfigure{fig:FITTEDZERO}
+\label{r:FITTEDZERO}
+<<FITTEDZERO, fig.show='hide',fig.path="",  fig.asp=1>>=
+# generate the 
+gen.Zadj("GA")
+plotZAGA(mu=fitted(g0, "mu")[1], sigma=fitted(g0, "sigma")[1], 
+            nu=fitted(g0, "nu")[1], main="(a)", ylab="density")
+plotGAZadj(mu=fitted(g0, "mu")[1], sigma=fitted(g0, "sigma")[1], 
+            xi0=fitted(g0, "nu")[1]); title("(b)")
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{FITTEDZERO-1}
+\includegraphics[width=0.49\textwidth]{FITTEDZERO-2}
+\rpage{r:FITTEDZERO}
+\caption{The fitted distribution using (a) \texttt{plotZAGA()} and  (b) \texttt{plotGAZadj().} 
+}
+\label{fig:FITTEDZERO}
+\end{figure}
+The fitted distributions are identical.
+
+\section{Fitting a regression model}
+\label{Fitting a regression model}
+
+\subsection{Simulation example.}
+\label{Simulatiion example}
+
+We first generate the values for the explanatory variable $x$  and then create three different functions of $x$, $f_{\mu}(x)$, $f_{\sigma}(x)$ and $f_{\nu}(x)$, for the parameters  $\mu$, $\sigma$, $\nu$; respectively. 
+We will use for the simulations the functions \code{fmu()},  \code{fsigma()} and  \code{fnu()} produced by the following code and shown in Figure  \ref{fig:SIMULREG}.
+Note that the data frame \code{sda} contains values for a previous fitted  model for $\mu$, $\sigma$ and $\nu$ given an explanatory variable $x$.
+
+\rfigure{fig:SIMULREG}
+\label{r:SIMULREG}
+<<SIMULREG, fig.show='hide',fig.path="",  fig.asp=1>>=
+# generating x ----------
+set.seed(3210)
+x <- (runif(1000)*4)-2
+range(x)
+data(sda)
+fmu <- splinefun(sda$x, sda$mu)
+curve(fmu, -2,2)
+fsigma <- splinefun(sda$x, sda$sigma)
+curve(fsigma, -2,2)
+fnu <- function(x)
+  {f <- splinefun(sda$x, sda$nu) 
+  f(x)/6
+  }
+curve(fnu, -2,2)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[height=4cm,width=0.49\textwidth]{SIMULREG-1}
+\includegraphics[height=4cm,width=0.49\textwidth]{SIMULREG-2}\\
+\includegraphics[height=4cm,width=0.49\textwidth]{SIMULREG-3}
+\rpage{r:SIMULREG}
+\caption{Showing the three functions  $\mu=f_{\mu}(x)$, $\sigma=f_{\sigma}(x)$ and $\nu=f_{\nu}(x)$ used for the simulation of the data in this section.  From top left to the   bottom we have the functions for $\mu$, $\sigma$ and $\nu$.} 
+\label{fig:SIMULREG}
+\end{figure} 
+Next we randomly generate the response variable values, \code{y0}, from a zero adjusted gamma distribution model, $\texttt{ZAGA}(\mu, \sigma, \nu)$ where $\mu=f_{\mu}(x)$, $\sigma=f_{\sigma}(x)$ and $\nu=f_{\nu}(x)$. 
+Figure \ref{fig:SIMULHIST} shows the  response variable  $y0$ against $x$.
+\rfigure{fig:SIMULHIST}
+\label{r:SIMULHIST}
+<<SIMULHIST, fig.show='hide',fig.path="",  fig.asp=1>>=
+# generating y0 ----------
+set.seed(123)
+ y0 <- rZAGA(1000, mu=fmu(x), sigma=fsigma(x), nu=fnu(x))
+plot(x,y0)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{SIMULHIST-1}
+\rpage{r:SIMULREG}
+\caption{Showing the response variable $y_0$  against the single explanatory variable  $x$ for the simulated from a zero adjusted gamma, $\texttt{ZAGA}(\mu, \sigma, \nu)$  distributed response variable $y_0$  with values defined on $[0,\infty)$.}
+\label{fig:SIMULHIST}
+\end{figure}
+
+We will fit a zero adjusted  distribution using the function \code{gamlss()}. The same model will be also fitted using the \code{gamlssZadj()} function. Since, in general, the type of relationship existing between the parameters and the explanatory variable $x$ is unknown we will use smooth functions for $x$. In the following code we used the P-spline smother implemented in the additive term function \code{pb()}. 
+<<>>=
+g0p <- gamlss(y0~pb(x), sigma.fo=~pb(x), nu.fo=~pb(x), family=ZAGA)
+t0p <- gamlssZadj(y=y0, mu.fo=~pb(x), sigma.fo=~pb(x), 
+                  xi0.fo=~pb(x), family="GA", trace=TRUE)
+AIC(g0p, t0p)
+summary(t0p)
+@
+
+The two models have the same deviance as we would expect. Make sure not to try to interpret the coefficients and the standard errors of the smoothing functions in the summary table. They are here as a consequence of how the model is fitted within the \code{gamlss()} algorithm, (which uses backfitting to alternate between fitting the linear and smoothing component) and they are for the linear term  rather than indicating the coefficients and the standard errors of the smoothing functions.  To roughly check whether the smoothing  function as a whole is significant  use the function \code{drop1()}.  In our case since we are dealing with simulated data  we can actually plot the true functions   $\mu=f_{\mu}(x)$, $\sigma=f_{\sigma}(x)$ and $\nu=f_{\nu}(x)$  with their fitted functions. Figure \ref{fig:ZeroInfGAT} shows the results.   Note  that the  fitted values for the parameters $\mu$, $\sigma$  and $\nu$ (or $\xi_0$) are  identical  in both fitted models.   
+
+
+\rfigure{fig:ZeroInfGAT}
+\label{r:ZeroInfGAT}
+<<ZeroInfGAT, fig.show='hide',fig.path="",  fig.asp=1>>=
+# mu
+curve(fmu, -2,2, main="mu")
+lines(fitted(g0p)[order(x)]~x[order(x)], col="red",   lty=2, lwd=2)
+lines(fitted(t0p, "mu")[order(x)]~x[order(x)], col="blue",   lty=2, lwd=2)
+# sigma
+curve(fsigma, -2,2, main="sigma")
+lines(fitted(g0p, "sigma")[order(x)]~x[order(x)], col="red",   lty=2, lwd=2)
+lines(fitted(t0p, "sigma")[order(x)]~x[order(x)], col="blue",   lty=2, lwd=2)
+# nu
+curve(fnu, -2,2, main="nu")
+lines(fitted(g0p, "nu")[order(x)]~x[order(x)], col="red",   lty=2, lwd=2)
+lines(fitted(t0p, "xi0")[order(x)]~x[order(x)], col="blue",   lty=2, lwd=2)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{ZeroInfGAT-1}
+\includegraphics[width=0.49\textwidth]{ZeroInfGAT-2}\\
+\includegraphics[width=0.49\textwidth]{ZeroInfGAT-3}
+\rpage{r:ZeroInfGAT}
+\caption{Showing the functions from which the data were simulated, together  with the fitted smooth functions, for $\mu$, $\sigma$ and  $\nu$ (or $\xi_0$). The solid black line is the true function. The dashed line is the fitted function from both  models \texttt{g0p} and \texttt{t0p} since they are identical.}
+\label{fig:ZeroInfGAT}
+\end{figure}
+
+
+Note  that the \code{term.plot()} functions is not working for models fitted through the  \code{gamlssZadj()} function so use the function \code{term.plotZadj()}. 
+Figure \ref{fig:termplotatZadj} shows the fitted additive terms using the \code{gamlss} \code{ZAGA} fit on the left and the \code{gamlssZadj} fit on the right. 
+
+\rfigure{fig:termplotatZadj}
+\label{r:termplotatZadj}
+<<termplotatZadj, fig.show='hide',fig.path="",  fig.asp=1>>=
+term.plot(g0p);title("gamlss")
+term.plotZadj(t0p);title("gamlssZadj")
+term.plot(g0p, "sigma")
+term.plotZadj(t0p, "sigma")
+term.plot(g0p, "nu")
+term.plotZadj(t0p, "xi0")
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-1}
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-2}\\
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-3}
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-4}\\
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-5}
+\includegraphics[height=5cm,width=0.49\textwidth]{termplotatZadj-6}
+\rpage{r:termplotatZadj}
+\caption{Showing the fitted additive predictors for $\mu$, $\sigma$ and $\nu$   and their approximate 95\% confidence bands for models fitted using the function \texttt{gamlss()} on the left  and using the function  \texttt{gamlssZadj()} on the right.}
+\label{fig:termplotatZadj}
+\end{figure}
+
+
+Note that diagnostics plots like the residual plot, \code{plot()}, the worm plot, \code{wp()}, and the Q-statistics plot, \code{Q.stats()}, are all working with a \code{gamlssZadj} object. Also in the case  in which  only one explanatory variable exists, the function \code{centile.Zadj()} can be used to plot centile curves, see Figure \ref{fig:diagnosticsZasdj}.
+\rfigure{fig:diagnosticsZasdj}
+\label{r:diagnosticsZasdj}
+<<diagnosticsZasdj, fig.show='hide',fig.path="",  fig.asp=1>>=
+plot(t0p)
+wp(t0p, ylim.all=1)
+Q.stats(t0p, xvar=x)
+centiles.Zadj(t0p, xvar=x)
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[height=5cm,width=0.49\textwidth]{diagnosticsZasdj-1}
+\includegraphics[height=5cm,width=0.49\textwidth]{diagnosticsZasdj-2}\\
+\includegraphics[height=5cm,width=0.49\textwidth]{diagnosticsZasdj-3}
+\includegraphics[height=5cm,width=0.49\textwidth]{diagnosticsZasdj-4}\\
+\rpage{r:tdiagnosticsZasdj}
+\caption{Showing the diagnostic plots created by  \texttt{plot()},  \texttt{wp()}, and \texttt{Q.stats()}, and  the centile curves produced by \texttt{centile.Zadj()}.}
+\label{fig:diagnosticsZasdj}
+\end{figure}
+
+Note that the \% of cases below the $0.4$, $2$, $20$ and $25$ centile curves should  be ignored because their centiles curves include value $Y=0$, see the centiles curves in Figure \ref{fig:diagnosticsZasdj}. 
+
+\subsection{Fitting alternative zero adjusted distributions on $[0,\infty)$.}
+\label{Fitting alternative zero adjusted distributions on [0,infty)}
+
+\subsubsection{Zero adjusted log-transform distributions on $[0,\infty)$.}
+\label{Zero adjusted log-transform distributions on [0,infty)}
+
+The function \code{ gamlssZadj()} can be used with a log-transform  distribution on $(0, \infty)$ or with a truncated distribution on $(0, \infty)$.  
+For zero adjusted log-transform distribution use the following code: 
+<<cache=TRUE>>=
+# generate a log-tranform distribution from 0 to infinity
+gen.Family("SST", "log")
+# fit the model
+t0sst <- gamlssZadj(y=y0, mu.fo=~pb(x), sigma.fo=~pb(x), 
+                   xi0.fo=~pb(x), family="logSST")
+@
+\subsubsection{Zero adjusted truncated distributions on $[0,\infty)$.}
+\label{Zero adjusted truncated distributions on [0,infty)}
+For a zero adjusted truncated distribution use: 
+<<cache=TRUE>>=
+# generate a left truncated distribution SST from 0 to Infty
+library(gamlss.tr)
+gen.trun(c(0),"SST",type="left")
+# fit the model
+t0ssttr <- gamlssZadj(y=y0, mu.fo=~pb(x), sigma.fo=~pb(x), 
+                       xi0.fo=~pb(x), family="SSTtr")
+GAIC(g0p, t0p, t0sst,t0ssttr )
+@
+
+Note that both $\texttt{logSST}(\mu,\sigma,\nu,\tau)$ and  $\texttt{SSTtr}(\mu,\sigma,\nu,\tau)$ distributions have four parameters, so their corresponding zero adjusted distributions have five parameters [including the extra parametrers $\xi_0=P(Y=0)$]. Hence models \code{t0sst} and \code{t0ssttr} can include models for parameters $\nu$ and $\tau$, e.g. \code{formula.nu=$\sim$pb(x)}, as well as models for $\mu$, $\sigma$ and $\xi_0$.  
+
+
+\subsubsection{Generalised Tobit model distributions on $[0,\infty)$.}
+\label{Generalised Tobit model distributions on [0,infty)}
+
+In  general for a restricted values response variable, that is, having a  distribution on a restricted range,  the Tobit  model (which requires a survival analysis  response variable), can be appropriate. Here we show how this model can be fitted within \code{gamlss}. Note though that for any Tobit model the probability at zero can \textbf{not} be modelled independently as a function of explanatory variables, but is equal to the probability of being left censored at zero. 
+
+Below we fit a Tobit normal model and a Tobit \texttt{SST} model, both left censored at 0 to provide point probabilities at 0.  
+ 
+<<cache=TRUE>>=
+library(survival)
+y0surv<- Surv(y0, y0!=0, type="left")
+# creating the distribution
+library(gamlss.cens)
+# Gaussian
+gen.cens("NO", type="left")
+# SST distribution
+gen.cens("SST", type="left")
+# fitting the  model
+# Tobit model
+s0no <- gamlss( y0surv ~ pb(x), sigma.formula=~pb(x),
+               family=NOlc)
+# generalised Tobit
+s0sst <- gamlss( y0surv ~ pb(x), sigma.formula=~pb(x),
+               family=SSTlc)
+GAIC(g0p, t0p, t0sst,t0ssttr, s0no, s0sst )
+@
+The Tobit models do not perform as well as the zero adjusted  models in this case.
+This is not surprising since the response  variable \code{y0} was simulated from a $ZAGA$ distribution (see earlier Section \ref{Simulating data}) which is a zero adjusted distribution. 
+
+\subsection{Real data  example.}
+\label{Real data  example}
+
+
+The data we will analyse  here are  motor vehicle insurance data, i.e. motor vehicle insurance policies. The data.frame \code{mvi} is a sample of 2000 observations from the data frame \code{mviBig} which has 67143 observations.
+
+
+
+
+
+\bigskip
+\begin{mdframed}[hidealllines=true,backgroundcolor=gray!20]
+\begin{description}
+  \item[\R{}  data file:] \code{mvi} in package \pkg{gamlss.data} of dimensions $ 2000 \times 11$
+   \item[{\bf var}]
+   \begin{description}
+      \item[\texttt{retval}]: a numeric vector showing the value of the vehicle
+    \item[\texttt{whetherclm}]: a numeric vector showing whether a claim is made, 0 no claim, 1 at least one claim
+    \item[\texttt{numclaims}]: a numeric vector showing the number of claims
+    \item[\texttt{claimcst0}]:  a numeric vector showing the total amount of claim, so if  for numclaims=0 it is zero.
+    \item[\texttt{vehmake}]: a factor showing the make of the car with levels BMW DAEWOO FORD MITSUBISHI.
+\item[\texttt{vehbody}]: a factor showing the type of the car, with levels BUS CONT COUPE HACK HDTOP HRSE MCARA MIBUS PANVN RDSTR SEDAN STNWG TRUCK UTE.
+\item[\texttt{vehage}]: a numeric vector showing the age of the car
+\item[\texttt{gender}]: a factor showing the gender of the policy holder with levels F M
+
+\item[\texttt{area}]:  factor showing the area of residence of the policy holder with levels A B C D E F
+\item[\texttt{agecat}]:  a factor showing the age band of the policy holder with levels 1 2 3 4 5 6 one is youngest
+\item[\texttt{exposure}]:  a numeric vector showing the time of exposure with values from zero to one
+  \end{description}
+
+\end{description}
+\label{TheRentData}
+\end{mdframed}   
+In the following analysis we ignore the exposure time and we fit zero adjusted models, with  models for $\mu$ and for the probability at zero (i.e. $\nu$ or $\xi_0$). 
+<<>>=
+data(mvi)
+# zero adjusted GA
+m1 <- gamlss(claimcst0~vehmake+vehbody+vehage+gender+area,
+             nu.fo=~vehmake+vehbody+vehage+gender+area, 
+             family=ZAGA, data=mvi )
+# zero adjusted IG
+m2 <- gamlss(claimcst0~vehmake+vehbody+vehage+gender+area,
+             nu.fo=~vehmake+vehbody+vehage+gender+area, 
+             family=ZAIG, data=mvi )
+# zero adjusted GG
+m3 <- gamlssZadj(claimcst0, ~vehmake+vehbody+vehage+gender+area, 
+             xi0.fo=~vehmake+vehbody+vehage+gender+area,
+             family=GG, data=mvi, trace=T, n.cyc=30 )
+# zero adjusted BCTo
+m4 <- gamlssZadj(claimcst0, ~vehmake+vehbody+vehage+gender+area, 
+             xi0.fo=~vehmake+vehbody+vehage+gender+area,
+             family=BCTo, data=mvi, trace=T )
+AIC(m1,m2,m3,m4)
+@
+The best model according to AIC  seems to be the model \code{m3} with a zero adjusted generalised gamma distribution, but it is not very far from model \code{m4}, the zero adjusted $BCTo$ distribution.
+ Figure \ref{fig:mviWormPlot} shows the worm plot for both distributions with the  zero adjusted $BCTo$ looking a bit better. 
+
+\rfigure{fig:mviWormPlot}
+\label{r:mviWormPlot}
+<<mviWormPlot, fig.show='hide',fig.path="",  fig.asp=1>>=
+wp(m3, ylim.all=1); title('(a)')
+wp(m4, ylim.all=1); title('(b)')
+@
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.49\textwidth]{mviWormPlot-1}
+\includegraphics[width=0.49\textwidth]{mviWormPlot-2}
+\rpage{r:mviWormPlot}
+\caption{The worm plot of the residuals from model (a) \texttt{m3}, the zero adjusted generalised gamma distribution and (b) \texttt{m4} the  zero adjusted $BCTo$ distribution.
+}
+\label{fig:mviWormPlot}
+\end{figure}
+
+
+
+ \section{Conclusions}
+ 
+ GAMLSS  is a framework where different models can be fitted  and compared.  
+ In this vignette, we have shown how models  with  a response  variable defined on $[0, \infty)$, including 0, (i.e.  the non-negative real line), can be fitted within the GALMSS framework.
+The \code{gamlssZadj()}  function can be used to fit a  variety  of different zero adjusted models, in  which  the response variable  lies on  $[0, \infty)$. A zero adjusted distribution for $Y$ comprises a value $Y=0$ with probability $p_0$ and $Y=Y_1$ with probability  $(1-p_0)$ where $Y_1$ has a continuous distribution on the interval $(0, \infty)$, i.e. the positive real line. In \code{gamlssZadj()} the parameter \code{xi0}, ($\xi_0$) equals $p_0=P(Y=0)$. The continuous distribution component must either  exist already within \code{gamlss.dist} or  be created using the \code{gen.Family()} or \code{gen.trun()}  function for transformed or truncated distributions, respectively. In addition the  function \code{gen.Zadj()} generates \code{d}, \code{p}, \code{q}, \code{r} and plot functions for a zero adjusted distribution. 
+ 
+ 
+More information about GAMLSS can be found in \cite{Stasinopoulosetal2017} or the GAMLSS website \url{www.gamlss.org}.  We're hoping that the \pkg{gamlss.inf}  package will be useful.
+ 
+
+
+\bibliographystyle{plainnat}   
+\bibliography{vignettes-2017}
+
+\printindex
+
+\end{document}

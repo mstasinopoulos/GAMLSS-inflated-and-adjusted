@@ -1,0 +1,20 @@
+Package: gamlss.inf
+Type: Package
+Title: Fitting Mixed (Inflated and Adjust) Distributions
+Version: 1.0-0
+Date: 2017-03-21
+Depends: R (>= 2.2.1), gamlss.dist, gamlss
+Imports: methods
+Author: c(person("Marco", "Enea", role = c("aut", "cre", "cph"), 
+             email = "marco.enea@unipa.it"),
+           person("Bob", "Rigby", role = c("aut")), 
+           person("Mikis", "Stasinopoulos", role = c("aut","cre"),
+             email = "mikis.stasinopoulos@gamlss.org")
+           person("Abu", "Hossain", role = "aut"))
+Maintainer: Marco Enea  <marco.enea@unipa.it>
+Description: This is an add-on package to GAMLSS. The purpose of this
+        package is to allow users to fit a very general mixed distribution.
+License: GPL-2 | GPL-3
+URL: http://www.gamlss.org/
+NeedsCompilation: no
+Packaged: 2017-03-03 14:05:15 UTC; MikisStasinopoulos
